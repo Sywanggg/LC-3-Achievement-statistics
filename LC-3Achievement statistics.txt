@@ -1,0 +1,106 @@
+	    .ORIG	x3000 		
+	    LD	    R1,INITIALSCORE	;R1 is the initial address for storing unsorted scores
+	    LD	    R7,RESULT		;R7 is the address for storing the sorted results
+	    LD	    R2,StuNum		;R2 read the number of students
+
+
+Flit	LDR	R3,R1,#0		;R3 read the first score in the memory address pointed by R1
+	    STR	R3,R7,#0		;Save the score read by R3 to the result address pointed by R7
+	    ADD	R1,R1,#1		;Point R1 reading pointer to the next grade
+	    ADD	R7,R7,#1		;Point R7 result pointer to the next address
+	    ADD	R2,R2,#-1		;R2 minus 1 for each copy of a student's score
+	    BRp	Filt			;Recursively call COPY if there are still scores not read
+	    
+		AND	R2,R2,#0		;R2 is used to count the times of outer loop
+		AND	R1,R1,#-29		;Set R1 to -29	
+		
+OUTLOOP	LD  R7,RESULT		
+		AND R3,R3,#0		;R3 is used to count the times of inner loop
+		 
+INLOOP	LDR	R4,R7,#0		; R4 storage SCORE [j]
+		LDR	R5,R7,#1		; R5 storage SCORE [j+1]
+	    NOT	R6,R4		
+	    ADD	R6,R6,#1				   
+	    ADD	R6,R6,R5		; R6=SCORE[j+1]-SCORE[j]
+	    BRp	SWAP			; If SCORE [j+1]>SCORE [j], swap positions		
+			
+		ADD	R7,R7,#1		
+		ADD	R3,R3,#1		;j++	
+		ADD	R6,R3,R1		;R6=j-(n-i)
+		BRn	INLOOP		
+			
+SWAP	STR	R5,R7,0 		;Exchange SCORE[j+1] SCORE[j]
+		STR	R4,R7,1 
+		ADD	R7,R7,#1
+		ADD	R3,R3,#1
+		ADD R6,R3,R1
+		BRn	INLOOP					
+		
+;inner loop ends
+		
+		ADD R1,R1,#1
+		ADD	R2,R2,#1			;Each inner loop ends, R2+1
+		ADD	R6,R2,#-29			;R6=j-(n-i)
+		BRn	OUTLOOP		
+	
+;Calculate the number of people in A and B
+		
+		AND	R1,R1,#0		; R1 is used to count
+		AND	R2,R2,#0		; R2 is used to store the number of people with Grade A
+		AND	R3,R3,#0		; R3 is used to store the number of people with Grade B
+		AND	R4,R4,#0		; R4 is used to store the number of people with Grade C
+		AND	R5,R5,#0		; R5 is used to store the number of people with Grade D	
+		LD	R7,RESULT		; Read the scores in order	
+	
+
+ACOUNT	LDR	R6,R7,#0	
+		ADD	R6,R6,ThresholdA	; R4=score-90
+		BRn	BCOUNT				; If score<90, grade B
+		ADD	R2,R2,#1			; Otherwise, it will be classified as Grade A, R5+1
+		ADD	R7,R7,#1			; Move to next score	
+		ADD	R1,R1,#1			; count++	
+		ADD	R0,R1,#-8			; R0=count-8
+		BRn	ACOUNT
+	
+BCOUNT	LDR	R6,R7,#0	
+		ADD	R4,R4,ThresholdB	
+		BRn	CCOUNT				
+		ADD	R3,R3,#1		
+		ADD	R7,R7,#1		
+		ADD	R1,R1,#1		
+		ADD	R0,R1,#-15	
+		BRn	BCOUNT
+		
+CCOUNT	LDR	R6,R7,#0	
+		ADD	R4,R4,ThresholdC	
+		BRn	DCOUNT				
+		ADD	R4,R4,#1		
+		ADD	R7,R7,#1		
+		ADD	R1,R1,#1		
+		ADD	R0,R1,#-25	
+		BRn	CCOUNT
+		
+DCOUNT	NOT R1
+		ADD R5,R1,#30
+	
+	 	STI	R2,NumberA
+		STI	R3,NumberB
+		STI R4,NumberC
+		STI R5,NumberD
+		HALT			
+
+INITIALSCORE	.FILL	x3200	;Start address of score storage	
+RESULT		.FILL	x4000		;Start address for storing results of score sorting
+NumberA		.FILL	x4100		;Storage address of the number of people at level A
+NumberB		.FILL	x4101	
+NumberC 	.Fill	x4102
+NumberD 	.Fill	x4103
+ThresholdA	.FILL	-90		
+ThresholdB	.FILL	-80	
+ThresholdC	.FILL	-60
+StuNum		.FILL	30	
+
+	.END			
+
+
+
